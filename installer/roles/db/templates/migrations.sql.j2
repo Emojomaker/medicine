@@ -1,0 +1,18 @@
+CREATE USER {{ app_db_user }} with password '{{ db_password }}';
+
+GRANT ALL PRIVILEGES ON DATABASE medicine TO {{ app_db_user }};
+
+DROP TABLE IF EXISTS drugs;
+
+CREATE TABLE IF NOT EXISTS drugs (
+	medicine_id serial PRIMARY KEY,
+	name VARCHAR ( 100 ) NOT NULL,
+	count_of_tablets INT NOT NULL,
+	sell_by DATE NOT NULL
+);
+
+GRANT ALL PRIVILEGES ON DATABASE medicine TO {{ app_db_user }};
+
+GRANT ALL PRIVILEGES ON TABLE drugs TO {{ app_db_user }};
+
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO {{ app_db_user }};

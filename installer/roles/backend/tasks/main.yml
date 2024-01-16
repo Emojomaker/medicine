@@ -1,0 +1,63 @@
+- name: install python package
+  yum:
+    name: python3
+    state: present
+  become: true
+
+- name: Configure host for app
+  block:
+
+    - name: install virtualenv
+      pip:
+        name: virtualenv
+        executable: pip3
+      become: true
+
+    - name: create virtualenv for project
+      command:
+        cmd: "python3 -m venv /home/{{ ansible_user }}/{{ venv_name }}  --system-site-packages"
+
+    - name: upgrade pip package
+      pip:
+        name: pip
+        virtualenv: "/home/{{ ansible_user }}/{{ venv_name }}"
+        extra_args: --upgrade pip
+      become: true
+
+    - name: copy requirements file
+      copy:
+        src: requirements.txt
+        dest: /home/{{ ansible_user }}
+
+    - name: initialize python venv
+      pip:
+        requirements: "/home/{{ ansible_user }}/requirements.txt"
+        virtualenv: "/home/{{ ansible_user }}/{{ venv_name }}"
+
+    - name: copy python file
+      template:
+        src: "{{ item }}.j2"
+        dest: "/home/vagrant/{{ item }}"
+      with_items:
+        - api.py
+        - db_connect.py
+
+    - name: create systemd service
+      template:
+        src: medicine.service.j2
+        dest: /etc/systemd/system/medicine.service
+        owner: root
+        group: root
+        mode: 744
+      become: true
+
+    - name: start application via systemd
+      systemd:
+        name: medicine
+        state: started
+        enabled: yes
+        daemon_reload: yes
+      become: true
+
+  vars:
+    ansible_python_interpreter: /usr/bin/python3

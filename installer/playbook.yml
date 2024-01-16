@@ -1,0 +1,14 @@
+- name: Configure hosts
+  hosts: all
+  roles:
+    - { role: "provisioning" }
+
+- name: Configure database host
+  hosts: database
+  roles:
+    - {role: "db"}
+
+- name: Configure backend host
+  hosts: backend
+  roles:
+    - {role: "backend"}

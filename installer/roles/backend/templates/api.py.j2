@@ -1,0 +1,48 @@
+import os
+from flask import Flask, jsonify, request
+from db_connect import get_postgresql_conn
+
+
+DATABASE_IP = "{{ database_ip }}"
+DB_NAME = "{{ db_name }}"
+DB_USER = "{{ app_db_user }}"
+PWD = "{{ db_password }}"
+
+
+app = Flask(__name__)
+
+def add_drug_into_db(name, count_of_tablets, sell_by):
+    with get_postgresql_conn(DATABASE_IP, DB_NAME, DB_USER, PWD) as db_connect:
+        with db_connect.cursor() as cursor:
+            cursor.execute("INSERT INTO drugs (name, count_of_tablets, sell_by)"
+                          f"VALUES ('{name}', '{count_of_tablets}', '{sell_by}')")
+        db_connect.commit()
+
+
+def get_list_of_drugs_from_db():
+    with get_postgresql_conn(DATABASE_IP, DB_NAME, DB_USER, PWD) as db_connect:
+        with db_connect.cursor() as cursor:
+            cursor.execute("SELECT * FROM drugs;")
+            return cursor.fetchall()
+
+
+@app.route('/medicine/get_drugs', methods=['GET'])
+def get_drugs():
+    drugs = get_list_of_drugs_from_db()
+    return jsonify(drugs), 201
+    
+
+@app.route('/medicine/add_drug', methods=['POST'])
+def add_drug():
+    request_data = request.get_json()
+    new_drug = {
+        'name': request_data['name'],
+        'count_of_tablets': request_data['count_of_tablets'],
+        'sell_by': request_data['sell_by'],
+    }
+    add_drug_into_db(new_drug['name'], new_drug['count_of_tablets'], new_drug['sell_by'])
+    return jsonify({'drug': new_drug}), 201
+
+
+if __name__ == '__main__':
+    app.run(debug=True, host='{{ backend_ip }}')

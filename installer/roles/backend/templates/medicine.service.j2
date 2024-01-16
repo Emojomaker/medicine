@@ -1,0 +1,12 @@
+[Unit]
+Description=medicine
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/{{ ansible_user }}
+ExecStart=/home/{{ ansible_user }}/{{ venv_name }}/bin/gunicorn --bind {{ backend_ip }}:8000 api:app --log-file /home/vagrant/gunicorn.log --log-level DEBUG 
+Environment="PATH=/home/{{ ansible_user }}/{{ venv_name }}/bin:{{ ansible_env.PATH }}"
+
+[Install]
+WantedBy=multi-user.target

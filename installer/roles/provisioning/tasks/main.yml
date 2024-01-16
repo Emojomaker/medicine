@@ -1,0 +1,29 @@
+- name: Configure hosts
+  block:
+
+    - name: remove hosts into hosts file
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ backend_ip }} {{ backend_hostname }}\n{{ database_ip }} {{ database_hostname }}"
+        state: absent
+
+    - name: add hosts into hosts file
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ backend_ip }} {{ backend_hostname }}\n{{ database_ip }} {{ database_hostname }}"
+        state: present
+
+    - name: add yum repo
+      yum:
+        name: epel-release
+        state: latest
+
+    - name: install yum packages
+      yum:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - vim
+        - net-tools
+  become: yes
+

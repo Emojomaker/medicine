@@ -1,0 +1,59 @@
+- name: Install postgresql database
+  block:
+
+    - name: install yum packages for postgresql
+      yum:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - postgresql
+        - postgresql-server
+        - postgresql-contrib
+        - postgresql-libs
+        - python3-psycopg2
+
+    - name: check if PostgreSQL is initialized
+      stat:
+        path: "/var/lib/pgsql/data/pg_hba.conf"
+      register: postgres_data
+
+    - name: initialize PostgreSQL
+      shell: "postgresql-setup initdb"
+      when: not postgres_data.stat.exists
+      notify: start postgresql
+
+    - name: template configs
+      template:
+        src: "{{ item }}.j2"
+        dest: "/var/lib/pgsql/data/{{ item }}"
+      with_items:
+        - pg_hba.conf
+        - postgresql.conf
+      become_user: postgres
+
+    - name: "Flush handlers"
+      meta: flush_handlers
+  become: true
+
+- name: Create sql file
+  template:
+    src: migrations.sql.j2
+    dest: "/tmp/migrations.sql"
+
+- name: Create database for app
+  postgresql_db:
+    name: "{{ db_name }}"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  become: true
+  become_user: postgres
+
+- name: Initialize database for app
+  community.postgresql.postgresql_script:
+    path: "/tmp/migrations.sql"
+    db: "{{ db_name }}"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  become: true
+  become_user: postgres
+
